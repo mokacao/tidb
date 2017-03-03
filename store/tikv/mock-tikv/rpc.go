@@ -388,6 +388,7 @@ func (c *RPCClient) SendCopReq(ctx goctx.Context, addr string, req *coprocessor.
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
+	default:
 	}
 
 	store := c.Cluster.GetStoreByAddr(addr)

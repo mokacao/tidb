@@ -74,6 +74,31 @@ func (c *RawKVClient) Get(key []byte) ([]byte, error) {
 	return cmdResp.Value, nil
 }
 
+// Scan
+func (c *RawKVClient) Scan(startKey, endKey []byte, limit uint64) ([]*kvrpcpb.KvPair, error) {
+	start := time.Now()
+	defer func() { rawkvCmdHistogram.WithLabelValues("get").Observe(time.Since(start).Seconds()) }()
+
+	req := &kvrpcpb.Request{
+		Type: kvrpcpb.MessageType_CmdRawScan,
+		CmdRawScanReq: &kvrpcpb.CmdRawScanRequest{
+			StartKey: startKey,
+			EndKey:   endKey,
+			Limit:    &limit,
+		},
+	}
+	resp, err := c.sendKVReq(startKey, req)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+	cmdResp := resp.GetCmdRawScanResp()
+	if cmdResp == nil {
+		return nil, errors.Trace(errBodyMissing)
+	}
+
+	return cmdResp.Pairs, nil
+}
+
 // Put stores a key-value pair to TiKV.
 func (c *RawKVClient) Put(key, value []byte) error {
 	start := time.Now()
